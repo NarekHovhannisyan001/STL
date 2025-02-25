@@ -20,14 +20,13 @@ public:
     using pointer = value_type*;
     using const_pointer = const value_type*;
 
-    // Nested classes for iterators and proxy class for operator[]
+    // Iterators classes
     class iterator;
     class const_iterator;
     class reverse_iterator;
     class const_reverse_iterator;
-    class proxy;
 
-    // Constructors and destructor
+    // Ctors and dtor
     Vector();
     explicit Vector(size_type count);
     Vector(size_type count, const T& value);
@@ -58,12 +57,16 @@ public:
     // Iterators
     iterator begin() noexcept;
     const_iterator begin() const noexcept;
+    const_iterator cbegin() const noexcept;
     iterator end() noexcept;
     const_iterator end() const noexcept;
+    const_iterator cend() const noexcept;
     reverse_iterator rbegin() noexcept;
     const_reverse_iterator rbegin() const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
     reverse_iterator rend() noexcept;
     const_reverse_iterator rend() const noexcept;
+    const_reverse_iterator crend() const noexcept;
 
     // Capacity
     bool empty() const noexcept;
@@ -102,7 +105,6 @@ public:
     template<typename... Args>
     iterator append_range(Args&&... args);
 
-    void print() const;
 
     // Comparison operators
     friend bool operator==(const Vector& lhs, const Vector& rhs) {
@@ -121,15 +123,53 @@ public:
     }
 
 private:
+    //Helpers
+    void reallocate(size_type new_cap);
+    void destroy_elements();
+private:
     pointer elements;
     size_type count;
     size_type capacity_;
-
-    void reallocate(size_type new_cap);
-    void destroy_elements();
 };
 
-// Implementation for nested const_iterator class
+// Iterators
+template<typename T>
+class Vector<T>::iterator {
+public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
+
+    iterator(pointer ptr) : ptr_(ptr) {}
+
+    const_reference operator*() const { return *ptr_; }
+    reference operator*() { return *ptr_; }
+    pointer operator->() { return ptr_; }
+    const_pointer operator->() const { return ptr_; }
+    iterator& operator++() { ++ptr_; return *this; }
+    iterator operator++(int) { iterator tmp = *this; ++ptr_; return tmp; }
+    iterator& operator--() { --ptr_; return *this; }
+    iterator operator--(int) { iterator tmp = *this; --ptr_; return tmp; }
+    iterator& operator+=(difference_type offset) { ptr_ += offset; return *this; }
+    iterator operator+(difference_type offset) const { return iterator(ptr_ + offset); }
+    iterator& operator-=(difference_type offset) { ptr_ -= offset; return *this; }
+    iterator operator-(difference_type offset) const { return iterator(ptr_ - offset); }
+    difference_type operator-(const iterator& other) const { return ptr_ - other.ptr_; }
+    reference operator[](difference_type offset) const { return *(ptr_ + offset); }
+    bool operator==(const iterator& other) const { return ptr_ == other.ptr_; }
+    bool operator!=(const iterator& other) const { return ptr_ != other.ptr_; }
+    bool operator<(const iterator& other) const { return ptr_ < other.ptr_; }
+    bool operator<=(const iterator& other) const { return ptr_ <= other.ptr_; }
+    bool operator>(const iterator& other) const { return ptr_ > other.ptr_; }
+    bool operator>=(const iterator& other) const { return ptr_ >= other.ptr_; }
+
+private:
+    pointer ptr_;
+};
+
+
 template<typename T>
 class Vector<T>::const_iterator {
 public:
@@ -141,8 +181,8 @@ public:
 
     const_iterator(pointer ptr) : ptr_(ptr) {}
 
-    reference operator*() const { return *ptr_; }
-    pointer operator->() const { return ptr_; }
+    const_reference operator*() const { return *ptr_; }
+    const_pointer operator->() const { return ptr_; }
     const_iterator& operator++() { ++ptr_; return *this; }
     const_iterator operator++(int) { const_iterator tmp = *this; ++ptr_; return tmp; }
     const_iterator& operator--() { --ptr_; return *this; }
@@ -163,6 +203,103 @@ public:
 private:
     pointer ptr_;
 };
+
+template<typename T>
+class Vector<T>::reverse_iterator {
+public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
+
+    reverse_iterator(pointer ptr = nullptr) : m_ptr(ptr) {}
+
+    const_reference operator*() const { return *m_ptr; }
+    reference operator*() { return *m_ptr; }
+    pointer operator->() { return m_ptr; }
+    const_pointer operator->() const { return m_ptr; }
+
+    reverse_iterator& operator++() { --m_ptr; return *this; }
+    reverse_iterator operator++(int) { reverse_iterator temp = *this; --(*this); return temp; }
+
+    reverse_iterator& operator--() { ++m_ptr; return *this; }
+    reverse_iterator operator--(int) { reverse_iterator temp = *this; ++(*this); return temp; }
+
+    reverse_iterator operator+(difference_type n) const { return reverse_iterator(m_ptr - n); }
+    reverse_iterator operator-(difference_type n) const { return reverse_iterator(m_ptr + n); }
+
+    difference_type operator-(const reverse_iterator& other) const { return other.m_ptr - m_ptr; }
+
+    reverse_iterator& operator+=(difference_type n) { m_ptr -= n; return *this; }
+    reverse_iterator& operator-=(difference_type n) { m_ptr += n; return *this; }
+
+    reference operator[](difference_type n) const { return *(m_ptr - n); }
+
+    bool operator==(const reverse_iterator& other) const { return m_ptr == other.m_ptr; }
+    bool operator!=(const reverse_iterator& other) const { return m_ptr != other.m_ptr; }
+    bool operator<(const reverse_iterator& other) const { return m_ptr > other.m_ptr; }
+    bool operator>(const reverse_iterator& other) const { return m_ptr < other.m_ptr; }
+    bool operator<=(const reverse_iterator& other) const { return m_ptr >= other.m_ptr; }
+    bool operator>=(const reverse_iterator& other) const { return m_ptr <= other.m_ptr; }
+
+private:
+    pointer m_ptr;
+};
+
+template<typename T>
+class Vector<T>::const_reverse_iterator {
+public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const T*;
+    using reference = const T&;
+
+    const_reverse_iterator(pointer ptr = nullptr) : m_ptr(ptr) {}
+
+    const_reference operator*() const { return *m_ptr; }
+    const_pointer operator->() const { return m_ptr; }
+
+    const_reverse_iterator& operator++() { --m_ptr; return *this; }
+    const_reverse_iterator operator++(int) { const_reverse_iterator temp = *this; --(*this); return temp; }
+
+    const_reverse_iterator& operator--() { ++m_ptr; return *this; }
+    const_reverse_iterator operator--(int) { const_reverse_iterator temp = *this; ++(*this); return temp; }
+
+    const_reverse_iterator operator+(difference_type n) const { return const_reverse_iterator(m_ptr - n); }
+    const_reverse_iterator operator-(difference_type n) const { return const_reverse_iterator(m_ptr + n); }
+
+    difference_type operator-(const const_reverse_iterator& other) const { return other.m_ptr - m_ptr; }
+
+    const_reverse_iterator& operator+=(difference_type n) { m_ptr -= n; return *this; }
+    const_reverse_iterator& operator-=(difference_type n) { m_ptr += n; return *this; }
+
+    reference operator[](difference_type n) const { return *(m_ptr - n); }
+
+    bool operator==(const const_reverse_iterator& other) const { return m_ptr == other.m_ptr; }
+    bool operator!=(const const_reverse_iterator& other) const { return m_ptr != other.m_ptr; }
+    bool operator<(const const_reverse_iterator& other) const { return m_ptr > other.m_ptr; }
+    bool operator>(const const_reverse_iterator& other) const { return m_ptr < other.m_ptr; }
+    bool operator<=(const const_reverse_iterator& other) const { return m_ptr >= other.m_ptr; }
+    bool operator>=(const const_reverse_iterator& other) const { return m_ptr <= other.m_ptr; }
+
+private:
+    pointer m_ptr;
+};
+
+template <typename T>
+concept Streamable = requires(std::ostream& os, const T& obj) {
+    { os << obj } -> std::same_as<std::ostream&>;
+};
+
+template <Streamable T>
+void print(const Vector<T>& vec) {
+    for (typename Vector<T>::size_type i = 0; i < vec.size(); ++i) {
+        std::cout << vec[i] << " ";
+    }
+    std::cout << std::endl;
+}
 
 #include "Vector.tpp"
 

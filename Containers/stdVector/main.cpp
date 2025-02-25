@@ -1,18 +1,16 @@
 #include <iostream>
 #include "Vector.hpp"
 
-int main() {
-    // Create a Vector of integers
+int main()
+{
     Vector<int> intVector;
 
-    // Add elements to the Vector
-    for (int i = 1; i <= 5; ++i) {
+    for (int i = 1; i <= 5; ++i)
+    {
         intVector.push_back(i * 10);
     }
-
-    // Print the Vector using the print method
     std::cout << "Vector elements: ";
-    intVector.print();
+    print(intVector);
     std::cout << std::endl;
 
     // Access elements using the subscript operator
@@ -23,13 +21,14 @@ int main() {
 
     // // Print the modified Vector
     std::cout << "Modified Vector elements: ";
-    intVector.print();
+    print(intVector);
     std::cout << std::endl;
 
     // // Use iterators to traverse the Vector
     std::cout << "Vector elements using iterators: ";
     auto it = intVector.begin();
-    for (auto it = intVector.begin(); it != intVector.end(); ++it) {
+    for (auto it = intVector.begin(); it != intVector.end(); ++it)
+    {
         std::cout << *it << " ";
     }
     std::cout << std::endl;
@@ -39,7 +38,7 @@ int main() {
 
     // Print the resized Vector
     std::cout << "Resized Vector elements: ";
-    intVector.print();
+    print(intVector);
     std::cout << std::endl;
 
     // Clear the Vector
@@ -47,6 +46,13 @@ int main() {
 
     // Check if the Vector is empty
     std::cout << "Is the Vector empty? " << (intVector.empty() ? "Yes" : "No") << std::endl;
+
+    // Matrix case
+    Vector<Vector<int>> mat;
+    mat.emplace_back();
+    mat[0].emplace_back();
+    mat[0][0] = 2;
+    std::cout << "Matrix's first element " << mat[0][0] << std::endl;
 
     return 0;
 }

@@ -46,7 +46,7 @@ Vector<T>::Vector(std::initializer_list<value_type> init)
 
 template<typename T>
 Vector<T>::~Vector() {
-    destroy_elements();
+    // destroy_elements();
     delete[] elements;
 }
 
@@ -156,12 +156,22 @@ typename Vector<T>::const_iterator Vector<T>::begin() const noexcept {
 }
 
 template<typename T>
+typename Vector<T>::const_iterator Vector<T>::cbegin() const noexcept {
+    return const_iterator(elements);
+}
+
+template<typename T>
 typename Vector<T>::iterator Vector<T>::end() noexcept {
     return iterator(elements + count);
 }
 
 template<typename T>
 typename Vector<T>::const_iterator Vector<T>::end() const noexcept {
+    return const_iterator(elements + count);
+}
+
+template<typename T>
+typename Vector<T>::const_iterator Vector<T>::cend() const noexcept {
     return const_iterator(elements + count);
 }
 
@@ -176,12 +186,22 @@ typename Vector<T>::const_reverse_iterator Vector<T>::rbegin() const noexcept {
 }
 
 template<typename T>
+typename Vector<T>::const_reverse_iterator Vector<T>::crbegin() const noexcept {
+    return const_reverse_iterator(end());
+}
+
+template<typename T>
 typename Vector<T>::reverse_iterator Vector<T>::rend() noexcept {
     return reverse_iterator(begin());
 }
 
 template<typename T>
 typename Vector<T>::const_reverse_iterator Vector<T>::rend() const noexcept {
+    return const_reverse_iterator(begin());
+}
+
+template<typename T>
+typename Vector<T>::const_reverse_iterator Vector<T>::crend() const noexcept {
     return const_reverse_iterator(begin());
 }
 
@@ -321,7 +341,7 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator pos, Args&&... ar
         size_type new_capacity = capacity_ == 0 ? 1 : 2 * capacity_;
         pointer new_elements = new value_type[new_capacity];
         std::uninitialized_copy(begin(), pos, new_elements);
-        new(new_elements + offset) value_type(std::forward<Args>(args)...); // In-place new operator
+        new(new_elements + offset) value_type(std::forward<Args>(args)...); // Placement new
         std::uninitialized_copy(pos, end(), new_elements + offset + 1);
         destroy_elements();
         delete[] elements;
@@ -329,7 +349,7 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator pos, Args&&... ar
         capacity_ = new_capacity;
     } else {
         std::uninitialized_copy(pos, end(), elements + offset + 1);
-        new(elements + offset) value_type(std::forward<Args>(args)...); // In-place new operator
+        new(elements + offset) value_type(std::forward<Args>(args)...); // Placement new
     }
     ++count;
     return iterator(elements + offset);
@@ -370,13 +390,13 @@ typename Vector<T>::reference Vector<T>::emplace_back(Args&&... args) {
         size_type new_capacity = capacity_ == 0 ? 1 : 2 * capacity_;
         pointer new_elements = new value_type[new_capacity];
         std::uninitialized_copy(elements, elements + count, new_elements);
-        new(new_elements + count) value_type(std::forward<Args>(args)...); // In-place new operator
+        new(new_elements + count) value_type(std::forward<Args>(args)...); //Placment new
         destroy_elements();
         delete[] elements;
         elements = new_elements;
         capacity_ = new_capacity;
     } else {
-        new(elements + count) value_type(std::forward<Args>(args)...); // In-place new operator
+        new(elements + count) value_type(std::forward<Args>(args)...); //Placment new
     }
     ++count;
     return elements[count - 1];
@@ -449,64 +469,5 @@ void Vector<T>::destroy_elements() {
         it->~value_type();
     }
 }
-
-
-template<typename T>
-void Vector<T>::print() const {
-    for (size_type i = 0; i < count; ++i) {
-        std::cout << elements[i] << " ";
-    }
-    std::cout << std::endl;
-}
-
-
-// Implementation for nested iterator class
-template<typename T>
-class Vector<T>::iterator {
-public:
-    using iterator_category = std::random_access_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T*;
-    using reference = T&;
-
-    iterator(pointer ptr) : ptr_(ptr) {}
-
-    reference operator*() const { return *ptr_; }
-    pointer operator->() { return ptr_; }
-    iterator& operator++() { ++ptr_; return *this; }
-    iterator operator++(int) { iterator tmp = *this; ++ptr_; return tmp; }
-    iterator& operator--() { --ptr_; return *this; }
-    iterator operator--(int) { iterator tmp = *this; --ptr_; return tmp; }
-    iterator& operator+=(difference_type offset) { ptr_ += offset; return *this; }
-    iterator operator+(difference_type offset) const { return iterator(ptr_ + offset); }
-    iterator& operator-=(difference_type offset) { ptr_ -= offset; return *this; }
-    iterator operator-(difference_type offset) const { return iterator(ptr_ - offset); }
-    difference_type operator-(const iterator& other) const { return ptr_ - other.ptr_; }
-    reference operator[](difference_type offset) const { return *(ptr_ + offset); }
-    bool operator==(const iterator& other) const { return ptr_ == other.ptr_; }
-    bool operator!=(const iterator& other) const { return ptr_ != other.ptr_; }
-    bool operator<(const iterator& other) const { return ptr_ < other.ptr_; }
-    bool operator<=(const iterator& other) const { return ptr_ <= other.ptr_; }
-    bool operator>(const iterator& other) const { return ptr_ > other.ptr_; }
-    bool operator>=(const iterator& other) const { return ptr_ >= other.ptr_; }
-
-private:
-    pointer ptr_;
-};
-
-// Proxy class for operator[]
-template<typename T>
-class Vector<T>::proxy {
-public:
-    proxy(reference ref) : ref_(ref) {}
-
-    operator reference() const { return ref_; }
-    proxy& operator=(const value_type& value) { ref_ = value; return *this; }
-    proxy& operator=(value_type&& value) { ref_ = std::move(value); return *this; }
-
-private:
-    reference ref_;
-};
 
 #endif // VECTOR_TPP
